@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Interactivo con Hotspots</title>
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #121212;
+        color: white;
+        overflow-x: hidden;
+    }
+    
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+    }
+    
+    h1 {
+        margin-bottom: 20px;
+        text-align: center;
+        font-size: 2.5rem;
+        color: #f8f8f8;
+        text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    
+    .stage {
+        position: relative;
+        width: 100%;
+        max-width: 960px;
+        height: 540px;
+        background-color: #000;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+    
+    .stage.fullscreen {
+        max-width: 100%;
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    
+    #intro-video,
+    #content-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    #intro-video::-webkit-media-controls-fullscreen-button,
+    #content-video::-webkit-media-controls-fullscreen-button {
+        display: none !important;
+    }
+    
+    .hotspot-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: #000000;
+        display: none;
+    }
+    
+    .hotspot {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+        animation: pulse 2s infinite;
+        z-index: 10;
+        opacity: 0;
+    }
+    
+    .hotspot.animate {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+
+    .hotspot:hover {
+        background-color: rgba(255, 0, 0, 0.8);
+        transform: scale(1.2);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+    }
+
+    .hotspot-title {
+        position: absolute;
+        bottom: -10px;
+        white-space: nowrap;
+        background: linear-gradient(135deg, rgba(10, 10, 10, 0.2), rgba(0, 0, 0, 10));
+        padding: 8px 15px;
+        border-radius: 15px;
+        font-size: 14px;
+        font-family: 'Arial', sans-serif;
+        font-weight: bold;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+        opacity: 0;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .hotspot-title.animate {
+        animation: fadeInUp 0.5s ease forwards 0.2s;
+    }
+
+    #hotspot1 .hotspot-title,
+    #hotspot3 .hotspot-title,
+    #hotspot4 .hotspot-title {
+        left: 100%;
+        transform: translateX(10px);
+    }
+
+    #hotspot2 .hotspot-title,
+    #hotspot5 .hotspot-title {
+        right: 100%;
+        transform: translateX(-10px);
+    }
+
+    #hotspot3 .hotspot-title {
+        font-size: 12px;
+        white-space: normal;
+        max-width: 150px;
+        text-align: center;
+    }
+
+    .hotspot:hover .hotspot-title {
+        transform: translateX(10px) scale(1.05);
+    }
+
+    #hotspot5:hover .hotspot-title {
+        transform: translateX(-10px) scale(1.05);
+    }
+
+    #hotspot1 { top: 3%; left: 47%; }
+    #hotspot2 { top: 20%; left: 35%; }
+    #hotspot3 { top: 50%; left: 65%; }
+    #hotspot4 { top: 83%; left: 40%; }
+    #hotspot5 { top: 50%; left: 35%; }
+    
+    .hotspot:hover .hotspot-title {
+        transform: translateX(-50%) scale(1.05);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    }
+    
+    @keyframes fadeInUp {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .controls {
+        position: absolute;
+        bottom: 50%;
+        right: 20px;
+        width: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 20;
+        transition: right 0.5s ease, opacity 0.3s ease;
+        opacity: 0;
+    }
+    
+    .controls.visible {
+        opacity: 1;
+    }
+    
+    .controls.centered {
+        right: 50%;
+        transform: translateX(50%);
+    }
+
+    .controls_1 {
+        position: absolute;
+        bottom: 25px;
+        left: 20px;
+        width: 100%;
+        display: flex;
+        justify-content: left;
+        gap: 10px;
+        z-index: 20;
+    }
+    
+    .intro-controls {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        width: 100%;
+        display: flex;
+        justify-content: left;
+        gap: 10px;
+        z-index: 20;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: 2px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .controls .btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .btn:hover {
+        background-color: white;
+        color: black;
+    }
+    
+    .hidden {
+        display: none;
+    }
+    
+    #video-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: none;
+    }
+    
+    #fullscreen-dialog {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 40;
+    }
+    
+    #fullscreen-dialog p {
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        text-align: center;
+        color: #fff;
+        text-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+    
+    #fullscreen-dialog .dialog-buttons {
+        display: flex;
+        gap: 15px;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>HF 440</h1>
+        <div class="stage">
+            <div id="start-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30;">
+                <h2 style="margin-bottom: 20px; color: white;">Bienvenido al Video Interactivo</h2>
+                <p style="color: white; margin-bottom: 20px; text-align: center;">Haz clic en el botón para comenzar la experiencia</p>
+                <button class="btn" onclick="iniciarVideo()">Comenzar</button>
+            </div>
+
+            <div id="fullscreen-dialog">
+                <p>¿Deseas reproducir el video en pantalla completa?</p>
+                <div class="dialog-buttons">
+                    <button class="btn" onclick="startWithFullscreen(true)">Sí</button>
+                    <button class="btn" onclick="startWithFullscreen(false)">No</button>
+                </div>
+            </div>
+
+            <div id="intro-container">
+                <video id="intro-video" controls>
+                     <source src="videos/intro.mp4" type="video/mp4">
+                    Tu navegador no soporta videos HTML5.
+                </video>
+            </div>
+            
+            <div class="hotspot-container" id="hotspot-screen">
+                <div class="hotspot" id="hotspot1" onclick="playVideo(1)">
+                    <span class="hotspot-title">JERINGA DE HEPARINA</span>
+                </div>
+                <div class="hotspot" id="hotspot2" onclick="playVideo(2)">
+                    <span class="hotspot-title">PANTALLA TÁCTIL</span>
+                </div>
+                <div class="hotspot" id="hotspot3" onclick="playVideo(3)">
+                    <span class="hotspot-title">CALENTADOR: LÍQUIDOS DE SUSTITUCIÓN</span>
+                </div>
+                <div class="hotspot" id="hotspot4" onclick="playVideo(4)">
+                    <span class="hotspot-title">BALANZAS</span>
+                </div>
+                <div class="hotspot" id="hotspot5" onclick="playVideo(5)">
+                    <span class="hotspot-title">BOMBAS Y SENSORES</span>
+                </div>
+                
+                <div class="controls_1">
+                    <button class="btn" onclick="backToIntro()">Volver a la Introducción</button>
+                    <button class="btn" onclick="toggleFullscreen()">Pantalla Completa</button>
+                </div>
+            </div>
+            
+            <div id="video-container">
+                <video id="content-video" controls>
+                    <source src="/api/placeholder/400/320" type="video/mp4">
+                    Tu navegador no soporta videos HTML5.
+                </video>
+                
+                <div class="controls" id="video-controls">
+                    <button class="btn" onclick="replayVideo()">Repetir Video</button>
+                    <button class="btn" onclick="backToHotspots()">Volver a la Selección</button>
+                    <button class="btn" onclick="toggleFullscreen()">Pantalla Completa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const introContainer = document.getElementById('intro-container');
+        const introVideo = document.getElementById('intro-video');
+        const hotspotScreen = document.getElementById('hotspot-screen');
+        const videoContainer = document.getElementById('video-container');
+        const contentVideo = document.getElementById('content-video');
+        const stage = document.querySelector('.stage');
+        const startScreen = document.getElementById('start-screen');
+        const fullscreenDialog = document.getElementById('fullscreen-dialog');
+        const videoControls = document.getElementById('video-controls');
+        
+        const videoURLs = {
+             intro: 'videos/intro.mp4',
+            video1: 'videos/PARTE3 JERINGA.mp4',
+            video2: 'videos/PARTE4 PANTALLA.mp4',
+            video3: 'videos/PARTE5 CALENTADOR LÍQUIDOS DE SUSTITUCIÓN.mp4',             
+            video4: 'videos/PARTE6 BALANZAS.mp4',
+            video5: 'videos/PARTE7 BOMBAS.mp4'
+        };
+        
+        hotspotScreen.style.backgroundImage = "url('images/fondo.jpg')";
+        
+        introVideo.addEventListener('ended', function() {
+            introContainer.style.display = 'none';
+            hotspotScreen.style.display = 'block';
+            animateHotspots();
+            if (stage.classList.contains('fullscreen')) {
+                stage.requestFullscreen().catch(err => {
+                    console.log(`Error al mantener pantalla completa: ${err.message}`);
+                });
+            }
+        });
+        
+        function animateHotspots() {
+            const hotspots = document.querySelectorAll('.hotspot');
+            const titles = document.querySelectorAll('.hotspot-title');
+            hotspots.forEach(hotspot => hotspot.classList.add('animate'));
+            titles.forEach(title => title.classList.add('animate'));
+        }
+        
+        function playVideo(videoNum) {
+            hotspotScreen.style.display = 'none';
+            videoContainer.style.display = 'block';
+            videoControls.classList.remove('centered', 'visible'); // Resetear posición y ocultar
+            if (stage.classList.contains('fullscreen')) {
+                stage.requestFullscreen().catch(err => {
+                    console.log(`Error al mantener pantalla completa: ${err.message}`);
+                });
+            }
+            contentVideo.src = videoURLs[`video${videoNum}`];
+            contentVideo.load();
+            contentVideo.play();
+        }
+        
+        contentVideo.addEventListener('ended', function() {
+            videoControls.classList.add('centered', 'visible'); // Mover al centro y mostrar
+        });
+        
+        contentVideo.addEventListener('play', function() {
+            videoControls.classList.remove('centered', 'visible'); // Resetear al reproducir
+        });
+        
+        // Mostrar botones al mover el mouse sobre el video
+        videoContainer.addEventListener('mousemove', function() {
+            if (!contentVideo.paused) { // Solo mostrar si el video está reproduciendo
+                videoControls.classList.add('visible');
+                clearTimeout(videoControls.hideTimeout);
+                videoControls.hideTimeout = setTimeout(() => {
+                    if (!contentVideo.ended) {
+                        videoControls.classList.remove('visible');
+                    }
+                }, 2000);
+            }
+        });
+        
+        // Ocultar botones si el mouse sale del contenedor
+        videoContainer.addEventListener('mouseleave', function() {
+            if (!contentVideo.ended) {
+                videoControls.classList.remove('visible');
+            }
+        });
+        
+        function backToHotspots() {
+            videoContainer.style.display = 'none';
+            hotspotScreen.style.display = 'block';
+            contentVideo.pause();
+            animateHotspots();
+            if (stage.classList.contains('fullscreen')) {
+                stage.requestFullscreen().catch(err => {
+                    console.log(`Error al mantener pantalla completa: ${err.message}`);
+                });
+            }
+        }
+        
+        function replayVideo() {
+            videoControls.classList.remove('centered', 'visible'); // Resetear posición y ocultar
+            contentVideo.currentTime = 0;
+            contentVideo.play();
+        }
+        
+        function backToIntro() {
+            hotspotScreen.style.display = 'none';
+            introContainer.style.display = 'block';
+            introVideo.currentTime = 0;
+            introVideo.play();
+            if (stage.classList.contains('fullscreen')) {
+                stage.requestFullscreen().catch(err => {
+                    console.log(`Error al mantener pantalla completa: ${err.message}`);
+                });
+            }
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                stage.requestFullscreen().catch(err => {
+                    console.log(`Error al intentar entrar en pantalla completa: ${err.message}`);
+                });
+                stage.classList.add('fullscreen');
+            } else {
+                document.exitFullscreen();
+                stage.classList.remove('fullscreen');
+            }
+        }
+        
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                stage.classList.remove('fullscreen');
+                const currentState = {
+                    intro: introContainer.style.display,
+                    hotspots: hotspotScreen.style.display,
+                    video: videoContainer.style.display
+                };
+                introContainer.style.display = 'none';
+                hotspotScreen.style.display = 'none';
+                videoContainer.style.display = 'none';
+                requestAnimationFrame(() => {
+                    introContainer.style.display = currentState.intro;
+                    hotspotScreen.style.display = currentState.hotspots;
+                    videoContainer.style.display = currentState.video;
+                    hotspotScreen.style.pointerEvents = 'auto';
+                    videoContainer.style.pointerEvents = 'auto';
+                    const buttons = document.querySelectorAll('.btn');
+                    buttons.forEach(btn => {
+                        btn.style.pointerEvents = 'auto';
+                        btn.style.display = 'inline-block';
+                    });
+                    stage.style.pointerEvents = 'auto';
+                });
+            } else {
+                stage.classList.add('fullscreen');
+            }
+        });
+        
+        const hotspots = document.querySelectorAll('.hotspot');
+        hotspots.forEach(hotspot => {
+            setInterval(() => {
+                const randomX = Math.random() * 6 - 3;
+                const randomY = Math.random() * 6 - 3;
+                hotspot.style.transform = `translate(${randomX}px, ${randomY}px)`;
+                setTimeout(() => {
+                    hotspot.style.transform = 'translate(0, 0)';
+                }, 500);
+            }, 3000);
+        });
+        
+        function iniciarVideo() {
+            startScreen.style.display = 'none';
+            fullscreenDialog.style.display = 'flex';
+        }
+        
+        function startWithFullscreen(choice) {
+            fullscreenDialog.style.display = 'none';
+            introContainer.style.display = 'block';
+            if (choice) {
+                stage.requestFullscreen().catch(err => {
+                    console.log(`Error al intentar entrar en pantalla completa: ${err.message}`);
+                });
+                stage.classList.add('fullscreen');
+            }
+            introVideo.play();
+        }
+    </script>
+</body>
+</html>
